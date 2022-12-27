@@ -3,6 +3,7 @@ import euclideanRhythm from "./assets/euclidean-rhythm"
 
 class Polid{
     constructor(){
+        this.observers = [];
         this.instruments = [];
         this.started = false;
         this.playing = false;
@@ -18,6 +19,7 @@ class Polid{
     }
     addInstrument(instrument){
         this.instruments = [...this.instruments, instrument];
+        this.notifyObservers({instrumentAdded: instrument});
     }
     createInstrument(type, steps, pulses){
         let instr = new Instrument(type, steps, pulses, 0, this.createSample(type)); 
@@ -60,6 +62,22 @@ class Polid{
             button.innerText = "STOP";
         }
 
+    }
+    addObserver(callback){ this.observers = [...this.observers, callback]; }
+    removeObserver(callback) {
+        this.observers = this.observers.filter((observer) => {
+            if (callback === observer) return false;
+        });
+    }
+    notifyObservers(payload){
+        function invokeObserverCB(observer) {
+            try {
+                observer(payload);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+        this.observers.forEach(invokeObserverCB);
     }
 }
 class Instrument {
