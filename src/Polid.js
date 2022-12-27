@@ -6,6 +6,7 @@ class Polid{
         this.instruments = [];
         this.started = false;
         this.playing = false;
+        
 
         let instr = this.createInstrument("kick", 4, 1);
         let instr2 = this.createInstrument("snare", 3, 3);
@@ -13,14 +14,10 @@ class Polid{
         this.addInstrument(instr);
         this.addInstrument(instr2);
         this.addInstrument(instr3);
-        console.log("Instr: ");
-        console.log(instr.pattern);
-        console.log(instr2.pattern);
+        this.canvasData = new CanvasData(this.instruments);
     }
     addInstrument(instrument){
-        console.log("added: ");
-        console.log(instrument.type);
-        this.instruments = [...this.instruments, instrument]
+        this.instruments = [...this.instruments, instrument];
     }
     createInstrument(type, steps, pulses){
         let instr = new Instrument(type, steps, pulses, 0, this.createSample(type)); 
@@ -41,17 +38,13 @@ class Polid{
                 if(instrument.pattern[instrument.beat]) 
                     instrument.sample.triggerAttackRelease("A1", "8n", time);
                 instrument.beat = (instrument.beat + 1) % instrument.steps;
-                console.log(instrument.type + " beat: ");
-                console.log(instrument.beat);
             }, instrument.steps +"n");
         });
     }
     async startPlaying(){
-        console.log("Playing");
         let button = document.getElementById("play-button");
         if(!this.started){
             await Tone.start();
-            console.log("Tone started, scedhuling repeat: ");
             Tone.Transport.bpm.value = 120;
             this.scheduleInstruments();
             Tone.getDestination().volume.rampTo(-10, 0.001);
@@ -80,6 +73,38 @@ class Instrument {
         
         this.sample = sample;
         this.pattern = [];
+    }
+}
+class CanvasData {
+    constructor(instruments){
+        this.baseRadius = 400/2;
+        this.baseColor = 0;
+
+        this.dotCounts = instruments.map((instrument)=>{
+            return instrument.steps;
+        });
+        this.radiuses = instruments.map(() => {
+            return this.baseRadius = this.baseRadius * 0.8; 
+        }); 
+        this.colors = this.radiuses.map(() => {
+            return this.baseColor = this.baseColor + 30;
+        });
+        
+    }
+    updateDotCounts(){
+        this.dotCounts = this.instruments.map((instrument)=>{
+            return instrument.steps;
+        });
+    }
+    updateRadiuses(){
+        this.radiuses = this.polid.instruments.map(() => {
+            return this.baseRadius = this.baseRadius * 0.8; 
+        }); 
+    }
+    updateColors(){
+        this.colors = this.radiuses.map(() => {
+            return this.baseColor = this.baseColor + 30;
+        });
     }
 }
 

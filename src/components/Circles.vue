@@ -6,32 +6,65 @@
 export default {
     name: "Circles-View",
     props: ["polid"],
+    methods: {
+        updateDotCounts(){
+            this.dotCounts = this.polid.instruments.map((instrument)=>{
+                return instrument.steps;
+            });
+        },
+        updateRadiuses(){
+            this.radiuses = this.polid.instruments.map(() => {
+                return this.baseRadius = this.baseRadius * 0.8; 
+            }); 
+        },
+        updateColors(){
+            this.colors = this.radiuses.map(() => {
+                return this.baseColor = this.baseColor + 30;
+            });
+        }
+    },
+    /*setup(){
+        let dotCounts = [];
+        let radiuses = [];
+        let colors = [];
+        let baseRadius = 400/2;
+        let baseColor = 0;
+        return {
+            dotCounts,
+            radiuses,
+            colors,
+            baseRadius,
+            baseColor,
+        }
+    },*/
     mounted(){
         const P5 = require("p5");
         let currentPolid = this.polid;
+
+        //this.updateDotCounts();
+        //this.updateRadiuses(); 
+        //this.updateColors();
+
         new P5(circles());
+        let dotCounts = currentPolid.canvasData.dotCounts;
+        let radiuses = currentPolid.canvasData.radiuses;
+        let colors = currentPolid.canvasData.colors;
+        console.log("dotCounts: ");
+        console.log(dotCounts);
+        console.log("radiuses: ");
+        console.log(radiuses);
+        console.log("Colors: ");
+        console.log(colors);
+        console.log("Canvas data: ");
+        console.log(currentPolid.canvasData);
+
         function circles(){
             return function(p5){
                 let dotRadius = 3;
-
-                let dotCounts = currentPolid.instruments.map((instrument)=>{
-                    return instrument.steps;
-                });
-
-                // Incremented with 30% for each step
-                //let radiuses = [50, 65, 84.5, 109.85, 142.81, 185.65, 241.34];
-                let baseRadius = 400/2;
-                let baseColor = 0;
-
-                let radiuses = currentPolid.instruments.map(() => {
-                    return baseRadius = baseRadius * 0.8; 
-                }); 
                 /* let dotDistances = radiuses.map((radius, index) => {
                     return radius / dotCounts[index];
                 }); */
-                let colors = radiuses.map(() => {
-                    return baseColor = baseColor + 30;
-                });
+                
                 p5.setup = () => {
                     //let canvas = p5.createCanvas(window.innerWidth, window.innerHeight);
                     let canvas = p5.createCanvas(400, 400);
