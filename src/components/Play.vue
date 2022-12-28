@@ -1,5 +1,6 @@
 <template>
     <button class="play-button" id="play-button" @click="sequenceActivated">PLAY</button>
+    <button class="add" id="add-button" @click="addInstr">ADD</button>
 </template>
 <script>
 export default {
@@ -8,7 +9,9 @@ export default {
     methods: {
         sequenceActivated(){
             this.polid.startPlaying();
-            this.polid.addInstrument(this.polid.createInstrument("clav", 6, 2))
+        },
+        addInstr(){
+            this.polid.addInstrument(this.polid.createInstrument("clav", 6, 2));
         }
     }
 }

@@ -2,7 +2,6 @@
 // Source: https://github.com/dbkaplun/euclidean-rhythm
 
 function euclidean(onNotes, totalNotes) {
-    console.log("Euclidean");
     var groups = [];
     for (var i = 0; i < totalNotes; i++) groups.push([Number(i < onNotes)]);
   

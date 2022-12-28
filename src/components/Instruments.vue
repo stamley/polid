@@ -12,6 +12,8 @@ export default {
     methods: {
         addInstrument(){
             this.polid.addInstrument(this.polid.createInstrument("kick"));
+            console.log("Canvas data: ");
+            console.log(this.polid.canvasData);
         },
     },
     mounted(){
