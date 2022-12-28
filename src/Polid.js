@@ -9,36 +9,12 @@ class Polid{
         this.playing = false;
 
         this.availableInstruments = ["kick","snare","hihat","ohh","clap","clav"]
-        this.nextInstrument = 1;
+        this.nextInstrument = 0;
 
-        let instr = this.createInstrument("kick", 4, 1);
         this.canvasData = new CanvasData();
-        this.addInstrument(instr);
-        //let instr2 = this.createInstrument("snare", 3, 3);
-        //let instr3 = this.createInstrument("hihat", 5, 5);
-        //this.addInstrument(instr2);
-        //this.addInstrument(instr3);       
+        this.addInstrument();
+             
         this.activeInstrument = 0;
-    }
-    addInstrument(){
-        if(this.nextInstrument < this.availableInstruments.length){
-            let instrument = this.createInstrument(this.availableInstruments[this.nextInstrument], 4, 1);
-            this.nextInstrument = this.nextInstrument + 1;
-            this.activeInstrument = this.activeInstrument + 1;
-            this.instruments = [...this.instruments, instrument];
-            this.updateCanvas();
-        }
-    }
-    removeInstrument(){
-        if(this.instruments.length > 1){
-            if(this.activeInstrument === this.instruments.length - 1)
-                this.activeInstrument = this.activeInstrument - 1;
-            this.instruments.pop();
-            console.log(this.nextInstrument);
-            this.nextInstrument = this.nextInstrument - 1;
-            console.log(this.nextInstrument);
-            this.updateCanvas();
-        }
     }
     createInstrument(type, steps, pulses){
         let instrument = new Instrument(type, steps, pulses, 0, this.createSample(type)); 
@@ -48,6 +24,33 @@ class Polid{
     }
     createSample(type){
         return new Tone.Sampler({A1: require("/src/sounds/" + type + "/" + type + ".wav")}).toDestination();
+    }
+    addInstrument(){
+        // Add the next available instrument from the list
+        // The index for the next instrument is increased as
+        // long as there are samples to choose from.
+        if(this.nextInstrument < this.availableInstruments.length){
+            let instrument = this.createInstrument(this.availableInstruments[this.nextInstrument], 4, 1);
+            this.instruments = [...this.instruments, instrument];
+            this.nextInstrument = this.nextInstrument + 1;
+            this.activeInstrument = this.activeInstrument + 1;
+            // Update the new values to the canvas
+            this.updateCanvas();
+            Tone.Transport.scheduleRepeat((time) => {
+                if(instrument.pattern[instrument.beat]) 
+                    instrument.sample.triggerAttackRelease("A1", "8n", time);
+                instrument.beat = (instrument.beat + 1) % instrument.steps;
+            }, instrument.steps + "n");
+        }
+    }
+    removeInstrument(){
+        if(this.instruments.length > 1){
+            if(this.activeInstrument === this.instruments.length - 1)
+                this.activeInstrument = this.activeInstrument - 1;
+            this.instruments.pop();
+            this.nextInstrument = this.nextInstrument - 1;
+            this.updateCanvas();
+        }
     }
     scheduleInstruments(){
         this.instruments.forEach((instrument) => {
@@ -63,7 +66,7 @@ class Polid{
         if(!this.started){
             await Tone.start();
             Tone.Transport.bpm.value = 120;
-            this.scheduleInstruments();
+            //this.scheduleInstruments();
             Tone.getDestination().volume.rampTo(-10, 0.001);
             this.started = true;
         }
@@ -93,7 +96,7 @@ class Polid{
         // eslint-disable-next-line no-unused-vars
         let radiusDecrease = this.canvasData.baseRadius;
         this.canvasData.radiuses = this.instruments.map(() => {
-            return radiusDecrease = radiusDecrease - 30; 
+            return radiusDecrease = radiusDecrease - 60; 
         }); 
     }
     updateColors(){
@@ -131,12 +134,29 @@ class Polid{
         }
     }
     increasePulses(){
-        if(this.instruments[this.activeInstrument].pulses < this.instruments[this.activeInstrument].steps)
-            this.instruments[this.activeInstrument].pulses = this.instruments[this.activeInstrument].pulses + 1;
+        let pulses = this.instruments[this.activeInstrument].pulses;
+        let steps = this.instruments[this.activeInstrument].steps;
+        if(pulses < steps){
+            this.instruments[this.activeInstrument].pulses = pulses + 1;
+            this.instruments[this.activeInstrument].pattern = euclideanRhythm(pulses + 1, steps);
+            //this.updateDotCounts();
+        }
     }
     decreasePulses(){
-        if(this.instruments[this.activeInstrument].pulses > 0)
-            this.instruments[this.activeInstrument].pulses = this.instruments[this.activeInstrument].pulses - 1;
+        let pulses = this.instruments[this.activeInstrument].pulses;
+        let steps = this.instruments[this.activeInstrument].steps;
+        if(pulses > 0){
+            this.instruments[this.activeInstrument].pulses = pulses - 1;
+            this.instruments[this.activeInstrument].pattern = euclideanRhythm(pulses - 1, steps)
+        }
+    }
+    increaseBpm(){
+        if(Tone.Transport.bpm.value < 280)
+            Tone.Transport.bpm.value = Tone.Transport.bpm.value + 5; 
+    }
+    decreaseBpm(){
+        if(Tone.Transport.bpm.value > 20)
+            Tone.Transport.bpm.value = Tone.Transport.bpm.value - 5; 
     }
 }
 class Instrument {
@@ -156,7 +176,7 @@ class Instrument {
 }
 class CanvasData {
     constructor(){
-        this.baseRadius = window.innerHeight/3;
+        this.baseRadius = window.innerHeight/2;
         this.baseColor = 0;
         this.dotCounts = []
         this.radiuses = []

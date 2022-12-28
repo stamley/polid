@@ -3,48 +3,26 @@
 </template>
 
 <script>
+import * as Tone from 'tone';
+
 export default {
     name: "Circles-View",
     props: ["polid"],
-    methods: {
-        handleInstrumentChangeLeft(){
-            this.polid.instrumentChangeLeft();
-        },
-        handleInstrumentChangeRight(){
-            this.polid.instrumentChangeRight();
-        },
-        handleInstrumentAdd(){
-            this.polid.addInstrument();
-        },
-        handleInstrumentRemove(){
-            this.polid.removeInstrument();
-        },
-        handleIncreaseSteps(){
-            this.polid.increaseSteps();
-        },
-        handleDecreaseSteps(){
-            this.polid.decreaseSteps();
-        },
-        handleIncreasePulses(){
-            this.polid.increasePulses();
-        },
-        handleDecreasePulses(){
-            this.polid.decreasePulses();
-        }
-    },
     unmounted(){
+        window.removeEventListener('keyup');
     },
     mounted(){
         window.addEventListener('keyup', (e) => {
-            if(e.key === 'ArrowLeft') this.handleInstrumentChangeLeft();
-            if(e.key === 'ArrowRight') this.handleInstrumentChangeRight();
-            if(e.key === 'Enter') this.handleInstrumentAdd();
-            if(e.key === 'Backspace') this.handleInstrumentRemove();
-            if(e.key === 'ArrowUp') this.handleIncreaseSteps();
-            if(e.key === 'ArrowDown') this.handleDecreaseSteps();
-            if(e.shiftKey && e.key === 'ArrowUp') this.handleIncreasePulses();
-            if(e.shiftKey && e.key === 'ArrowDown') this.handleDecreasePulses();
-
+            if(e.shiftKey && e.key === 'ArrowLeft') this.polid.decreaseBpm(); 
+            else if(e.key === 'ArrowLeft') this.polid.instrumentChangeLeft();
+            if(e.shiftKey && e.key === 'ArrowRight')  this.polid.increaseBpm();
+            else if(e.key === 'ArrowRight')  this.polid.instrumentChangeRight();
+            if(e.key === 'Enter') this.polid.addInstrument();
+            if(e.key === 'Backspace') this.polid.removeInstrument();
+            if(e.shiftKey && e.key === 'ArrowUp') this.polid.increasePulses();
+            else if(e.key === 'ArrowUp') this.polid.increaseSteps();
+            if(e.shiftKey && e.key === 'ArrowDown') this.polid.decreasePulses();
+            else if(e.key === 'ArrowDown') this.polid.decreaseSteps();
         })
 
         const P5 = require("p5");
@@ -88,6 +66,9 @@ export default {
                             p5.ellipse(x, y, dotRadius * 2, dotRadius * 2); // draw dot
                         }
                     });
+                    p5.fill(0);
+                    p5.text(Tone.Transport.bpm.value.toFixed(0), p5.width/2, p5.height/2);
+                    p5.textAlign(p5.CENTER, p5.CENTER);
                 };
             }
         }
