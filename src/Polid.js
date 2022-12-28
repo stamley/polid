@@ -7,35 +7,50 @@ class Polid{
         this.instruments = [];
         this.started = false;
         this.playing = false;
-        
+
+        this.availableInstruments = ["kick","snare","hihat","ohh","clap","clav"]
+        this.nextInstrument = 1;
 
         let instr = this.createInstrument("kick", 4, 1);
-        let instr2 = this.createInstrument("snare", 3, 3);
-        let instr3 = this.createInstrument("hihat", 5, 5);
+        this.canvasData = new CanvasData();
         this.addInstrument(instr);
-        this.addInstrument(instr2);
-        this.addInstrument(instr3);
-        this.canvasData = new CanvasData(this.instruments);
+        //let instr2 = this.createInstrument("snare", 3, 3);
+        //let instr3 = this.createInstrument("hihat", 5, 5);
+        //this.addInstrument(instr2);
+        //this.addInstrument(instr3);       
+        this.activeInstrument = 0;
     }
-    addInstrument(instrument){
-        this.instruments = [...this.instruments, instrument];
-        this.notifyObservers({instrumentAdded: instrument});
+    addInstrument(){
+        if(this.nextInstrument < this.availableInstruments.length){
+            let instrument = this.createInstrument(this.availableInstruments[this.nextInstrument], 4, 1);
+            this.nextInstrument = this.nextInstrument + 1;
+            this.activeInstrument = this.activeInstrument + 1;
+            this.instruments = [...this.instruments, instrument];
+            this.updateCanvas();
+        }
+    }
+    removeInstrument(){
+        if(this.instruments.length > 1){
+            if(this.activeInstrument === this.instruments.length - 1)
+                this.activeInstrument = this.activeInstrument - 1;
+            this.instruments.pop();
+            console.log(this.nextInstrument);
+            this.nextInstrument = this.nextInstrument - 1;
+            console.log(this.nextInstrument);
+            this.updateCanvas();
+        }
     }
     createInstrument(type, steps, pulses){
-        let instr = new Instrument(type, steps, pulses, 0, this.createSample(type)); 
-        this.euclidify(instr);
-        return instr;
+        let instrument = new Instrument(type, steps, pulses, 0, this.createSample(type)); 
+        // Evenly divide the pulses on the specific number of steps for the instrument
+        instrument.pattern = euclideanRhythm(instrument.pulses, instrument.steps);
+        return instrument;
     }
     createSample(type){
         return new Tone.Sampler({A1: require("/src/sounds/" + type + "/" + type + ".wav")}).toDestination();
     }
-    euclidify(instrument){
-        // Evenly divide the pulses on the specific number of steps for the instrument
-        instrument.pattern = euclideanRhythm(instrument.pulses, instrument.steps);
-    }
     scheduleInstruments(){
         this.instruments.forEach((instrument) => {
-            
             Tone.Transport.scheduleRepeat((time)=> {
                 if(instrument.pattern[instrument.beat]) 
                     instrument.sample.triggerAttackRelease("A1", "8n", time);
@@ -63,30 +78,76 @@ class Polid{
         }
 
     }
-    addObserver(callback){ this.observers = [...this.observers, callback]; }
-    removeObserver(callback) {
-        this.observers = this.observers.filter((observer) => {
-            if (callback === observer) return false;
+    updateCanvas(){
+        this.updateDotCounts();
+        this.updateColors();
+        this.updateRadiuses();
+    }
+    updateDotCounts(){
+        // eslint-disable-next-line no-unused-vars
+        this.canvasData.dotCounts = this.instruments.map((instrument)=>{
+            return instrument.steps;
         });
     }
-    notifyObservers(payload){
-        function invokeObserverCB(observer) {
-            try {
-                observer(payload);
-            } catch (err) {
-                console.error(err);
-            }
+    updateRadiuses(){
+        // eslint-disable-next-line no-unused-vars
+        let radiusDecrease = this.canvasData.baseRadius;
+        this.canvasData.radiuses = this.instruments.map(() => {
+            return radiusDecrease = radiusDecrease - 30; 
+        }); 
+    }
+    updateColors(){
+        // eslint-disable-next-line no-unused-vars
+        let colorGradient = this.canvasData.baseColor;
+        this.canvasData.colors = this.instruments.map(() => {
+            return colorGradient = colorGradient + 30;
+        });
+    }
+    instrumentChangeLeft(){
+        // 7 is the max amount of instruments
+        if(this.activeInstrument >= this.instruments.length - 1) return;
+        else {
+            this.activeInstrument = this.activeInstrument + 1;
         }
-        this.observers.forEach(invokeObserverCB);
+    }
+    instrumentChangeRight(){
+        if(this.activeInstrument === 0) return;
+        else {
+            this.activeInstrument = this.activeInstrument - 1;
+        }
+    }
+    increaseSteps(){
+        let steps = this.instruments[this.activeInstrument].steps 
+        if(steps < 32){
+            this.instruments[this.activeInstrument].steps = steps + 1;
+            this.updateDotCounts();
+        }
+    }
+    decreaseSteps(){
+        let steps = this.instruments[this.activeInstrument].steps 
+        if(steps > 2){
+            this.instruments[this.activeInstrument].steps = steps - 1;
+            this.updateDotCounts();
+        }
+    }
+    increasePulses(){
+        if(this.instruments[this.activeInstrument].pulses < this.instruments[this.activeInstrument].steps)
+            this.instruments[this.activeInstrument].pulses = this.instruments[this.activeInstrument].pulses + 1;
+    }
+    decreasePulses(){
+        if(this.instruments[this.activeInstrument].pulses > 0)
+            this.instruments[this.activeInstrument].pulses = this.instruments[this.activeInstrument].pulses - 1;
     }
 }
 class Instrument {
     constructor(type, steps, pulses, offset, sample){
         this.beat = 0;
         this.type = type;
+        this.active = false;
 
         this.steps = steps;
         this.pulses = pulses;
+        // Rotate array: https://stackoverflow.com/questions/1985260/rotate-the-elements-in-an-array-in-javascript
         this.offset = offset;
         
         this.sample = sample;
@@ -94,36 +155,14 @@ class Instrument {
     }
 }
 class CanvasData {
-    constructor(instruments){
-        this.baseRadius = 400/2;
+    constructor(){
+        this.baseRadius = window.innerHeight/3;
         this.baseColor = 0;
-
-        this.dotCounts = instruments.map((instrument)=>{
-            return instrument.steps;
-        });
-        this.radiuses = instruments.map(() => {
-            return this.baseRadius = this.baseRadius * 0.8; 
-        }); 
-        this.colors = this.radiuses.map(() => {
-            return this.baseColor = this.baseColor + 30;
-        });
-        
+        this.dotCounts = []
+        this.radiuses = []
+        this.colors = []
     }
-    updateDotCounts(){
-        this.dotCounts = this.instruments.map((instrument)=>{
-            return instrument.steps;
-        });
-    }
-    updateRadiuses(){
-        this.radiuses = this.polid.instruments.map(() => {
-            return this.baseRadius = this.baseRadius * 0.8; 
-        }); 
-    }
-    updateColors(){
-        this.colors = this.radiuses.map(() => {
-            return this.baseColor = this.baseColor + 30;
-        });
-    }
+    
 }
 
 export default Polid;

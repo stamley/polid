@@ -1,5 +1,5 @@
 <template>
-  <Instruments :polid = this.polid></Instruments>
+  <!--<Instruments :polid = this.polid></Instruments>-->
   <Circles :polid = this.polid></Circles>
   <Play :polid = this.polid></Play>
   <!--<img alt="Vue logo" src="./assets/logo.png">
@@ -8,14 +8,14 @@
 
 <script>
 import Polid from './Polid';
-import Instruments from './components/Instruments.vue';
+//import Instruments from './components/Instruments.vue';
 import Circles from './components/Circles.vue'
 import Play from './components/Play.vue'
 
 export default {
   name: 'App',
   components: {
-    Instruments,
+    //Instruments,
     Circles,
     Play,
   },
