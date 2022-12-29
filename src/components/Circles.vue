@@ -23,6 +23,8 @@ export default {
             else if(e.key === 'ArrowUp') this.polid.increaseSteps();
             if(e.shiftKey && e.key === 'ArrowDown') this.polid.decreasePulses();
             else if(e.key === 'ArrowDown') this.polid.decreaseSteps();
+            if(e.code === 'Space') this.polid.startPlaying();
+            if(e.key === 'm') this.polid.rescheduleBeats();
         })
 
         const P5 = require("p5");

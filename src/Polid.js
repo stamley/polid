@@ -32,15 +32,11 @@ class Polid{
         if(this.nextInstrument < this.availableInstruments.length){
             let instrument = this.createInstrument(this.availableInstruments[this.nextInstrument], 4, 1);
             this.instruments = [...this.instruments, instrument];
-            this.nextInstrument = this.nextInstrument + 1;
-            this.activeInstrument = this.activeInstrument + 1;
+            this.nextInstrument++;
+            this.activeInstrument++;
             // Update the new values to the canvas
             this.updateCanvas();
-            Tone.Transport.scheduleRepeat((time) => {
-                if(instrument.pattern[instrument.beat]) 
-                    instrument.sample.triggerAttackRelease("A1", "8n", time);
-                instrument.beat = (instrument.beat + 1) % instrument.steps;
-            }, instrument.steps + "n");
+            this.scheduleInstrument(instrument);
         }
     }
     removeInstrument(){
@@ -52,7 +48,18 @@ class Polid{
             this.updateCanvas();
         }
     }
-    scheduleInstruments(){
+    scheduleInstrument(instrument){
+        Tone.Transport.scheduleRepeat((time) => {
+            if(instrument.pattern[instrument.beat]) 
+                instrument.sample.triggerAttackRelease("A1", "8n", time);
+            instrument.beat = (instrument.beat + 1) % instrument.steps;
+        }, instrument.steps + "n");
+        if(this.playing)
+            this.rescheduleInstruments();
+    }
+    // Used to resync instruments when a new one is added
+    rescheduleInstruments(){
+        Tone.Transport.cancel();
         this.instruments.forEach((instrument) => {
             Tone.Transport.scheduleRepeat((time)=> {
                 if(instrument.pattern[instrument.beat]) 
@@ -60,13 +67,17 @@ class Polid{
                 instrument.beat = (instrument.beat + 1) % instrument.steps;
             }, instrument.steps +"n");
         });
+        this.instruments.forEach((instrument) => {
+            console.log("Beat for "+instrument.type+": ", instrument.beat);
+            instrument.beat = 0;
+        });
+        this.updateCanvas();
     }
     async startPlaying(){
         let button = document.getElementById("play-button");
         if(!this.started){
             await Tone.start();
             Tone.Transport.bpm.value = 120;
-            //this.scheduleInstruments();
             Tone.getDestination().volume.rampTo(-10, 0.001);
             this.started = true;
         }
@@ -120,16 +131,14 @@ class Polid{
         }
     }
     increaseSteps(){
-        let steps = this.instruments[this.activeInstrument].steps 
-        if(steps < 32){
-            this.instruments[this.activeInstrument].steps = steps + 1;
+        if(this.instruments[this.activeInstrument].steps < 32){
+            this.instruments[this.activeInstrument].steps++;
             this.updateDotCounts();
         }
     }
     decreaseSteps(){
-        let steps = this.instruments[this.activeInstrument].steps 
-        if(steps > 2){
-            this.instruments[this.activeInstrument].steps = steps - 1;
+        if(this.instruments[this.activeInstrument].steps > 2){
+            this.instruments[this.activeInstrument].steps--;
             this.updateDotCounts();
         }
     }
