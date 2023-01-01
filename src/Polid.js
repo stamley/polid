@@ -17,13 +17,23 @@ class Polid{
         this.activeInstrument = 0;
     }
     createInstrument(type, steps, pulses){
-        let instrument = new Instrument(type, steps, pulses, 0, this.createSample(type)); 
+        let instrument = new Instrument(type, steps, pulses, this.createSample(type)); 
         // Evenly divide the pulses on the specific number of steps for the instrument
         instrument.pattern = euclideanRhythm(instrument.pulses, instrument.steps);
         return instrument;
     }
     createSample(type){
         return new Tone.Sampler({A1: require("/src/sounds/" + type + "/" + type + ".wav")}).toDestination();
+    }
+    reset(){
+        if(this.instruments.length > 1){
+            Tone.Transport.cancel();
+            this.instruments = [];
+            this.nextInstrument = 0;
+            this.activeInstrument = -1;
+            this.addInstrument();
+            this.updateCanvas();
+        }
     }
     addInstrument(){
         // Add the next available instrument from the list
@@ -32,15 +42,12 @@ class Polid{
         if(this.nextInstrument < this.availableInstruments.length){
             let instrument = this.createInstrument(this.availableInstruments[this.nextInstrument], 4, 1);
             this.instruments = [...this.instruments, instrument];
-            this.nextInstrument = this.nextInstrument + 1;
-            this.activeInstrument = this.activeInstrument + 1;
+            this.nextInstrument++;
+            this.activeInstrument++;
             // Update the new values to the canvas
             this.updateCanvas();
-            Tone.Transport.scheduleRepeat((time) => {
-                if(instrument.pattern[instrument.beat]) 
-                    instrument.sample.triggerAttackRelease("A1", "8n", time);
-                instrument.beat = (instrument.beat + 1) % instrument.steps;
-            }, instrument.steps + "n");
+            this.scheduleInstrument(instrument);
+            this.rescheduleInstruments();
         }
     }
     removeInstrument(){
@@ -48,11 +55,22 @@ class Polid{
             if(this.activeInstrument === this.instruments.length - 1)
                 this.activeInstrument = this.activeInstrument - 1;
             this.instruments.pop();
+            Tone.Transport.cancel();
+            this.rescheduleInstruments();
             this.nextInstrument = this.nextInstrument - 1;
             this.updateCanvas();
         }
     }
-    scheduleInstruments(){
+    scheduleInstrument(instrument){
+        Tone.Transport.scheduleRepeat((time) => {
+            if(instrument.pattern[instrument.beat]) 
+                instrument.sample.triggerAttackRelease("A1", "8n", time);
+            instrument.beat = (instrument.beat + 1) % instrument.steps;
+        }, instrument.steps + "n");
+    }
+    // Used to resync instruments when a new one is added
+    rescheduleInstruments(){
+        Tone.Transport.cancel();
         this.instruments.forEach((instrument) => {
             Tone.Transport.scheduleRepeat((time)=> {
                 if(instrument.pattern[instrument.beat]) 
@@ -60,24 +78,25 @@ class Polid{
                 instrument.beat = (instrument.beat + 1) % instrument.steps;
             }, instrument.steps +"n");
         });
+        this.instruments.forEach((instrument) => { instrument.beat = 0; });
+        this.updateCanvas();
     }
     async startPlaying(){
-        let button = document.getElementById("play-button");
+        //let button = document.getElementById("play-button");
         if(!this.started){
             await Tone.start();
             Tone.Transport.bpm.value = 120;
-            //this.scheduleInstruments();
             Tone.getDestination().volume.rampTo(-10, 0.001);
             this.started = true;
         }
         if (this.playing) {
             Tone.Transport.stop();
             this.playing = false;
-            button.innerText = "PLAY";
+            //button.innerText = "PLAY";
         } else {
             Tone.Transport.start();
             this.playing = true;
-            button.innerText = "STOP";
+            //button.innerText = "STOP";
         }
 
     }
@@ -120,26 +139,26 @@ class Polid{
         }
     }
     increaseSteps(){
-        let steps = this.instruments[this.activeInstrument].steps 
-        if(steps < 32){
-            this.instruments[this.activeInstrument].steps = steps + 1;
+        if(this.instruments[this.activeInstrument].steps < 32){
+            this.instruments[this.activeInstrument].steps++;
+            this.rescheduleInstruments();
             this.updateDotCounts();
         }
     }
     decreaseSteps(){
-        let steps = this.instruments[this.activeInstrument].steps 
-        if(steps > 2){
-            this.instruments[this.activeInstrument].steps = steps - 1;
+        if(this.instruments[this.activeInstrument].steps > 2){
+            this.instruments[this.activeInstrument].steps--;
+            this.rescheduleInstruments();
             this.updateDotCounts();
         }
     }
     increasePulses(){
-        let pulses = this.instruments[this.activeInstrument].pulses;
-        let steps = this.instruments[this.activeInstrument].steps;
-        if(pulses < steps){
-            this.instruments[this.activeInstrument].pulses = pulses + 1;
-            this.instruments[this.activeInstrument].pattern = euclideanRhythm(pulses + 1, steps);
-            //this.updateDotCounts();
+        if(this.instruments[this.activeInstrument].pulses < this.instruments[this.activeInstrument].steps){
+            this.instruments[this.activeInstrument].pulses++;
+            this.instruments[this.activeInstrument].pattern = euclideanRhythm(
+                this.instruments[this.activeInstrument].pulses, 
+                this.instruments[this.activeInstrument].steps
+            );
         }
     }
     decreasePulses(){
@@ -158,18 +177,29 @@ class Polid{
         if(Tone.Transport.bpm.value > 20)
             Tone.Transport.bpm.value = Tone.Transport.bpm.value - 5; 
     }
+    increaseOffset(){
+        this.arrayRotate(this.instruments[this.activeInstrument].pattern);
+    }
+    decreaseOffset(){
+        this.arrayRotate(this.instruments[this.activeInstrument].pattern, true);
+    }
+    arrayRotate(arr, reverse) {
+        // By stackoverflow user: Yukulélé
+        // https://stackoverflow.com/questions/1985260/rotate-the-elements-in-an-array-in-javascript
+        if (reverse) arr.unshift(arr.pop());
+        else arr.push(arr.shift());
+        return arr;
+    }
 }
 class Instrument {
-    constructor(type, steps, pulses, offset, sample){
+    constructor(type, steps, pulses, sample){
         this.beat = 0;
         this.type = type;
         this.active = false;
 
         this.steps = steps;
         this.pulses = pulses;
-        // Rotate array: https://stackoverflow.com/questions/1985260/rotate-the-elements-in-an-array-in-javascript
-        this.offset = offset;
-        
+        // Rotate array: https://stackoverflow.com/questions/1985260/rotate-the-elements-in-an-array-in-javascript        
         this.sample = sample;
         this.pattern = [];
     }
