@@ -23,7 +23,9 @@ class Polid{
         return instrument;
     }
     createSample(type){
-        return new Tone.Sampler({A1: require("/src/sounds/" + type + "/" + type + ".wav")}).chain(new Tone.BitCrusher(8));
+        return new Tone.Sampler({A1: require("/src/sounds/" + type + "/" + type + ".wav")}).chain(
+            new Tone.BitCrusher({bits: 6, wet: 0.7}), 
+            new Tone.Distortion({distortion: 4, wet: 0.3}), Tone.Destination);
     }
     reset(){
         if(this.instruments.length > 1){
@@ -115,7 +117,7 @@ class Polid{
         // eslint-disable-next-line no-unused-vars
         let radiusDecrease = this.canvasData.baseRadius;
         this.canvasData.radiuses = this.instruments.map(() => {
-            return radiusDecrease = radiusDecrease - 60; 
+            return radiusDecrease = radiusDecrease - 100; 
         }); 
     }
     updateColors(){
