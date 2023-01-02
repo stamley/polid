@@ -23,7 +23,7 @@ class Polid{
         return instrument;
     }
     createSample(type){
-        return new Tone.Sampler({A1: require("/src/sounds/" + type + "/" + type + ".wav")}).toDestination();
+        return new Tone.Sampler({A1: require("/src/sounds/" + type + "/" + type + ".wav")}).chain(new Tone.BitCrusher(8));
     }
     reset(){
         if(this.instruments.length > 1){
