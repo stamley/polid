@@ -7,6 +7,7 @@ class Polid{
         this.instruments = [];
         this.started = false;
         this.playing = false;
+        this.modifier = 1;
 
         this.availableInstruments = ["kick","snare","hihat","ohh","clap","clav"]
         this.nextInstrument = 0;
@@ -25,7 +26,7 @@ class Polid{
     createSample(type){
         return new Tone.Sampler({A1: require("/src/sounds/" + type + "/" + type + ".wav")}).chain(
             new Tone.BitCrusher({bits: 6, wet: 0.7}), 
-            new Tone.Distortion({distortion: 4, wet: 0.3}), Tone.Destination);
+            new Tone.Distortion({distortion: 2, wet: 0.15}), Tone.Destination);
     }
     reset(){
         if(this.instruments.length > 1){
@@ -36,6 +37,10 @@ class Polid{
             this.addInstrument();
             this.updateCanvas();
         }
+    }
+    switchModifier(){
+        this.modifier = (this.modifier) % 3 + 1;
+        console.log("Mod: ", this.modifier);
     }
     addInstrument(){
         // Add the next available instrument from the list
@@ -142,14 +147,14 @@ class Polid{
     }
     increaseSteps(){
         if(this.instruments[this.activeInstrument].steps < 32){
-            this.instruments[this.activeInstrument].steps++;
+            this.instruments[this.activeInstrument].steps += 1 * this.modifier;
             this.rescheduleInstruments();
             this.updateDotCounts();
         }
     }
     decreaseSteps(){
         if(this.instruments[this.activeInstrument].steps > 2){
-            this.instruments[this.activeInstrument].steps--;
+            this.instruments[this.activeInstrument].steps -= 1 * this.modifier;
             this.rescheduleInstruments();
             this.updateDotCounts();
         }
