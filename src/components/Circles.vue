@@ -36,7 +36,8 @@ export default {
             else if(e.ctrlKey && e.key === 'ArrowDown') this.polid.decreaseOffset();
             else if(e.key === 'ArrowDown') this.polid.decreaseSteps();
             if(e.code === 'Space') this.polid.startPlaying();
-            if(e.key === 'm') this.polid.reset();
+            if(e.key === 'r') this.polid.reset();
+            if(e.key === 'm') this.polid.switchModifier();
         })
 
         const P5 = require("p5");
@@ -46,42 +47,58 @@ export default {
 
         function circles(){
             return function(p5){
-                let dotRadius = 7;
-                /* let dotDistances = radiuses.map((radius, index) => {return radius / dotCounts[index];}); */
-                
                 p5.setup = () => {
-                    let canvas = p5.createCanvas(window.innerWidth*0.95, window.innerHeight*0.93);
+                    let canvas = p5.createCanvas(window.innerWidth*0.95, window.innerHeight*0.90);
                     canvas.parent("p5Canvas");
-                    p5.background(255);
+                    p5.background(0);
                     p5.frameRate(60);
+                    p5.textSize(20);
                 };
                 p5.draw = () => {
-                    p5.background(255);
+                    p5.background(0);
+                    
                     let dotCounts = currentPolid.canvasData.dotCounts;
                     let radiuses = currentPolid.canvasData.radiuses;
-                    let colors = currentPolid.canvasData.colors;
+                    
                     // Drawing each circle for each instrument
                     currentPolid.instruments.forEach((instrument, i) => {
                         let active = 0;
-                        if(currentPolid.activeInstrument === i) active = 40;
-                        p5.fill(colors[i], 100, 100 + active);
+                        if(currentPolid.activeInstrument === i) active = 1.5;
+                        
+                         // For instrument circles
+                        p5.drawingContext.setLineDash([]);
+                        p5.fill(0);
+                        p5.strokeWeight(2 + active);
+                        p5.stroke(0, 240, 0);
                         p5.ellipse(p5.width/2, p5.height/2, radiuses[i]*2, radiuses[i]*2);
+                
                         // Drawing dots for the each instrument
                         for (let j = 0; j < dotCounts[i]; j++) {
-                            let angle = j * p5.TWO_PI / dotCounts[i]; // calculate angle for current dot
+                            // Calculate angle for current dot
+                            p5.drawingContext.setLineDash([]);
+                            let angle = j * p5.TWO_PI / dotCounts[i]; 
+                            // To evenly distribute the lines
+                            let x = p5.width / 2 + radiuses[i] * p5.cos(angle);
+                            let y = p5.height / 2 + radiuses[i] * p5.sin(angle);
                             
-                            // Other color for the current beat
-                            if(j === (instrument.beat + (instrument.steps - 1)) % instrument.steps) p5.fill(255)
-                            else if(instrument.pattern[j]) p5.fill(255, 100, 100);
-                            else { p5.fill(0); }
-
-                            let x = p5.width/2 + (radiuses[i] - 25) * p5.cos(angle);
-                            let y = p5.height/2 + (radiuses[i] - 25) * p5.sin(angle);
-                            p5.ellipse(x, y, dotRadius * 2, dotRadius * 2); // draw dot
+                            p5.strokeWeight(2 + active)
+                            // Draw small circle for each instruments current beat
+                            if(j === (instrument.beat + (instrument.steps - 1)) % instrument.steps) p5.ellipse(x , y, 15, 15);
+                            // Highlight the pattern for each instrument
+                            if(instrument.pattern[j]) p5.strokeWeight(7);
+                            // Non-pattern steps get dashed
+                            else { p5.drawingContext.setLineDash([10, 5]); }
+                            
+                            // draw line
+                            p5.line(p5.width/2, p5.height/2, x, y); 
                         }
                     });
-                    p5.fill(0);
-                    p5.text(Tone.Transport.bpm.value.toFixed(0), p5.width/2, p5.height/2);
+                   
+                    // Text for BPM
+                    p5.fill(0, 240, 0);
+                    p5.strokeWeight(0.4);
+                    p5.text("BPM: " + Tone.Transport.bpm.value.toFixed(0), 70, 40);
+                    p5.text("MOD: " + currentPolid.modifier, 70, 75);
                     p5.textAlign(p5.CENTER, p5.CENTER);
                 };
             }

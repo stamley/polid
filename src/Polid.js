@@ -7,6 +7,7 @@ class Polid{
         this.instruments = [];
         this.started = false;
         this.playing = false;
+        this.modifier = 1;
 
         this.availableInstruments = ["kick","snare","hihat","ohh","clap","clav"]
         this.nextInstrument = 0;
@@ -23,7 +24,7 @@ class Polid{
         return instrument;
     }
     createSample(type){
-        return new Tone.Sampler({A1: require("/src/sounds/" + type + "/" + type + ".wav")}).toDestination();
+        return new Tone.Sampler({A1: require("/src/sounds/" + type + "/" + type + ".wav")}).chain( Tone.Destination);
     }
     reset(){
         if(this.instruments.length > 1){
@@ -34,6 +35,20 @@ class Polid{
             this.addInstrument();
             this.updateCanvas();
         }
+    }
+    switchModifier(){
+        this.modifier = (this.modifier) % 3 + 1;
+        if(this.modifier === 2){
+            if(!(this.instruments[this.activeInstrument].steps % 2 === 0)) 
+                this.instruments[this.activeInstrument].steps--;
+        }
+        else if(this.modifier === 3){
+            if(this.instruments[this.activeInstrument].steps % 3 === 1)
+                this.instruments[this.activeInstrument].steps += 2;
+            else if(this.instruments[this.activeInstrument].steps % 3 === 2)
+                this.instruments[this.activeInstrument].steps ++;
+        }
+        this.updateCanvas();
     }
     addInstrument(){
         // Add the next available instrument from the list
@@ -115,7 +130,7 @@ class Polid{
         // eslint-disable-next-line no-unused-vars
         let radiusDecrease = this.canvasData.baseRadius;
         this.canvasData.radiuses = this.instruments.map(() => {
-            return radiusDecrease = radiusDecrease - 60; 
+            return radiusDecrease = radiusDecrease - 70; 
         }); 
     }
     updateColors(){
@@ -140,14 +155,14 @@ class Polid{
     }
     increaseSteps(){
         if(this.instruments[this.activeInstrument].steps < 32){
-            this.instruments[this.activeInstrument].steps++;
+            this.instruments[this.activeInstrument].steps += 1 * this.modifier;
             this.rescheduleInstruments();
             this.updateDotCounts();
         }
     }
     decreaseSteps(){
         if(this.instruments[this.activeInstrument].steps > 2){
-            this.instruments[this.activeInstrument].steps--;
+            this.instruments[this.activeInstrument].steps -= 1 * this.modifier;
             this.rescheduleInstruments();
             this.updateDotCounts();
         }
@@ -206,7 +221,7 @@ class Instrument {
 }
 class CanvasData {
     constructor(){
-        this.baseRadius = window.innerHeight/2;
+        this.baseRadius = window.innerHeight/1.95;
         this.baseColor = 0;
         this.dotCounts = []
         this.radiuses = []
