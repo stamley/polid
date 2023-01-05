@@ -48,11 +48,11 @@ export default {
         function circles(){
             return function(p5){
                 p5.setup = () => {
-                    let canvas = p5.createCanvas(window.innerWidth*0.95, window.innerHeight*0.93);
+                    let canvas = p5.createCanvas(window.innerWidth*0.95, window.innerHeight*0.90);
                     canvas.parent("p5Canvas");
                     p5.background(0);
                     p5.frameRate(60);
-                    p5.textSize(30);
+                    p5.textSize(20);
                 };
                 p5.draw = () => {
                     p5.background(0);
@@ -85,7 +85,7 @@ export default {
                             // Draw small circle for each instruments current beat
                             if(j === (instrument.beat + (instrument.steps - 1)) % instrument.steps) p5.ellipse(x , y, 15, 15);
                             // Highlight the pattern for each instrument
-                            if(instrument.pattern[j]) p5.strokeWeight(11);
+                            if(instrument.pattern[j]) p5.strokeWeight(7);
                             // Non-pattern steps get dashed
                             else { p5.drawingContext.setLineDash([10, 5]); }
                             
@@ -97,8 +97,8 @@ export default {
                     // Text for BPM
                     p5.fill(0, 240, 0);
                     p5.strokeWeight(0.4);
-                    p5.text(Tone.Transport.bpm.value.toFixed(0), 40, 40);
-                    p5.text(currentPolid.modifier, 40, 75);
+                    p5.text("BPM: " + Tone.Transport.bpm.value.toFixed(0), 70, 40);
+                    p5.text("MOD: " + currentPolid.modifier, 70, 75);
                     p5.textAlign(p5.CENTER, p5.CENTER);
                 };
             }

@@ -1,7 +1,6 @@
 <template>
-  <Circles :polid = this.polid></Circles>
-  <Controls></Controls>
-
+  <Circles :polid = this.polid />
+  <Controls/>
 </template>
 
 <script>
@@ -35,4 +34,8 @@ export default {
 html{
   background-color: black;
 }
+.Circles {
+  width: 100%;
+  height: 100%;
+} 
 </style>

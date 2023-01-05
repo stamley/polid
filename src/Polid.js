@@ -130,7 +130,7 @@ class Polid{
         // eslint-disable-next-line no-unused-vars
         let radiusDecrease = this.canvasData.baseRadius;
         this.canvasData.radiuses = this.instruments.map(() => {
-            return radiusDecrease = radiusDecrease - 100; 
+            return radiusDecrease = radiusDecrease - 70; 
         }); 
     }
     updateColors(){
@@ -221,7 +221,7 @@ class Instrument {
 }
 class CanvasData {
     constructor(){
-        this.baseRadius = window.innerHeight/2;
+        this.baseRadius = window.innerHeight/1.95;
         this.baseColor = 0;
         this.dotCounts = []
         this.radiuses = []
