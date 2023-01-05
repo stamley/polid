@@ -1,23 +1,19 @@
 <template>
-  <!--<Instruments :polid = this.polid></Instruments>-->
   <Circles :polid = this.polid></Circles>
-  <!--<Play :polid = this.polid></Play>-->
-  <!--<img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>-->
+  <Controls></Controls>
+
 </template>
 
 <script>
 import Polid from './Polid';
-//import Instruments from './components/Instruments.vue';
 import Circles from './components/Circles.vue'
-//import Play from './components/Play.vue'
+import Controls from './components/Controls.vue'
 
 export default {
   name: 'App',
   components: {
-    //Instruments,
     Circles,
-    //Play,
+    Controls,
   },
   setup(){
     const polid = new Polid();

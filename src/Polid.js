@@ -24,9 +24,7 @@ class Polid{
         return instrument;
     }
     createSample(type){
-        return new Tone.Sampler({A1: require("/src/sounds/" + type + "/" + type + ".wav")}).chain(
-            new Tone.BitCrusher({bits: 6, wet: 0.7}), 
-            new Tone.Distortion({distortion: 2, wet: 0.15}), Tone.Destination);
+        return new Tone.Sampler({A1: require("/src/sounds/" + type + "/" + type + ".wav")}).chain( Tone.Destination);
     }
     reset(){
         if(this.instruments.length > 1){
@@ -40,7 +38,17 @@ class Polid{
     }
     switchModifier(){
         this.modifier = (this.modifier) % 3 + 1;
-        console.log("Mod: ", this.modifier);
+        if(this.modifier === 2){
+            if(!(this.instruments[this.activeInstrument].steps % 2 === 0)) 
+                this.instruments[this.activeInstrument].steps--;
+        }
+        else if(this.modifier === 3){
+            if(this.instruments[this.activeInstrument].steps % 3 === 1)
+                this.instruments[this.activeInstrument].steps += 2;
+            else if(this.instruments[this.activeInstrument].steps % 3 === 2)
+                this.instruments[this.activeInstrument].steps ++;
+        }
+        this.updateCanvas();
     }
     addInstrument(){
         // Add the next available instrument from the list
